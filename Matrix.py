@@ -1,67 +1,92 @@
 class Matrix:
-    def __init__(self, *ems):#THE VALUES ARE STORED AS IF THEY WERE PRINTED
-        if len(ems) == 0: raise ValueError('Not enough parameters')
-        if type(ems[0]) not in [list, tuple]:
-            if len(ems) != 2:
-                raise ValueError('Two parameters expected, {} given'.format(len(ems)))
-            if not(type(ems[0])==type(ems[1])==int):
-                raise ValueError('Ints expected')
-            if not(ems[0]>0 and ems[1]>0): raise ValueError('Int error')
-            self.w, self.h = ems
-            self.__ems = [[0]*self.w for i in range(self.h)]
-        else:
-            ems=ems[0]
-            if len(ems) == 0: raise ValueError('Cannot create matrix from an empty list')
-            if not all(len(x) == len(ems[0]) for x in ems): raise ValueError('Input list rows have diffirent length')
-            self.w, self.h = len(ems[0]), len(ems)
-            self.__ems = [list(i) for i in ems]
-    get_m = lambda self: self.w
-    get_n = lambda self: self.h
-    get_size = lambda self: (self.w, self.h)
-    is_square = lambda self: self.w == self.h
-    def invert(self):
-        if not self.is_square(): raise ValueError('Can only invert a square matrix')
-        if (self.w, self.h) == (2, 2):
-            a, b, c, d = self.__ems[0] + self.__ems[1]
-            det = a*d - b*c
-            return Matrix(((d/det, -b/det), (-c/det, a/det)))
-    def set(self,x, y, value):
-        self.__ems[y][x] = value
-    def get(self, x, y):
-        return self.__ems[y][x]
-    def transpose(self):
-        return Matrix(list(zip(*self.__ems)))
-    def __str__(self):
-        return '\n'.join(['('+', '.join([str(self.__ems[i][j]) for j in range(self.w)])+')' for i in range(self.h)])
-    def comparable(self, other):
-        if type(other) != Matrix: raise ValueError('Can only compare matrixes, {} is a {}, not a matrix'.format(other, type(other)))
-        return self.w == other.w and self.h == other.h
-    def __eq__(self, other):
-        if not self.comparable(other): raise ValueError('Cannot compare matrixes of diffirent size')
-        return all(all(self.__ems[i][j]==other.__ems[i][j] for j in range(len(self.__ems[0]))) for i in range(len(self.__ems)))
+
+    A = None
+    m = None
+    n = None
+
+    def __init__(self, m, n=None):
+        if m <= 0 or n <= 0 or type(m) != int or type(n) != int:
+            raise Exception(ValueError)
+        self.A = [[0]*n for i in range(m)]
+        self.m = m
+        self.n = n
+
     def __add__(self, other):
-        if not self.comparable(other): raise ValueError('Cannot add matrixes of diffirent size')
-        return Matrix([[self.__ems[i][j]+other.__ems[i][j] for j in range(len(self.__ems[0]))] for i in range(len(self.__ems))])
-    def __sub__(self, other):
-        if not self.comparable(other): raise ValueError('Нельзя вычитать матрицы разного размера')
-        return Matrix([[self.__ems[i][j]-other.__ems[i][j] for j in range(len(self.__ems[0]))] for i in range(len(self.__ems))])
-    def __cross(self, x, y):
-        return Matrix([row[:x]+row[x+1:] for row in self.__ems[:y] + self.__ems[y+1:]])
-    def __mul__(self, other):
-        if type(other) not in [int, float, Matrix]: raise ValueError('Cannot multiply matrix and', type(other))
-        if type(other) == Matrix:
-            other, self = self, other #A terrible crutch, I know
-            if self.w != other.h: raise ValueError('Matrixes cannot be multiplied')
-            return Matrix([[sum(row1[i]*other.__ems[i][col2_ind] for i in range(self.w)) for col2_ind in range(other.w)] for row1 in self.__ems])
+        if self.m == other.m and self.n == other.n:
+            for j in range(self.m):
+                for i in range(self.n):
+                    self.A[j][i] += other.A[j][i]
+            return self
         else:
-            return Matrix([[self.__ems[i][j]*other for j in range(self.w)] for i in range(self.h)])
-    def __truediv__(self, other):
-        if type(other) in [int, float]:
-            return self * (1/other)
-        else:
-            raise ValueError()
+            print('Разные размеры матриц!')
+
+
     def determinant(self):
-        if not self.is_square(): raise ValueError('Not a square matrix!')
-        if self.w == 1: return self.__ems[0][0]
+        if self.m == self.n:
+            if self.n == 1:
+                return self.A[1][1]
+            elif self.n == 2:
+                return self.A[1][1]*self.A[2][2] - self.A[1][2]*self.A[2][1]
+            elif self.n == 3:
+                return self.A[1][1]*self.A[2][2]*self.A[3][3] + self.A[1][2]*self.A[2][3]*self.A[3][1] + self.A[1][3]*self.A[2][1]*self.A[3][2] - self.A[1][3]*self.A[2][2]*self.A[3][1] - self.A[1][2]*self.A[2][1]*self.A[3][3] - self.A[1][1]*self.A[2][3]*self.A[3][2]
+            else:
+                print('Слишком большая матрица!')
         else:
-            return sum([(-1)**i * self.__ems[0][i] * self.__cross(i, 0).determinant() for i in range(self.w)])
+            print('Матрица не квадратная!')
+
+
+    def __eq__(self, other):
+        bull = True
+        if self.n == other.n and self.m == other.m:
+            for j in range(self.m):
+                for i in range(self.n):
+                    if self.A[j][i] != other.A[j][i]:
+                        bull = False
+        else:
+            bull = False
+        return bull
+
+
+    def get(self, i, j):
+        if i <= self.m and j <= self.n:
+            raise Exception(ValueError)
+        else:
+            return self.A[i][j]
+
+
+    def get_m(self):
+        return self.m
+
+
+    def get_n(self):
+        return self.n
+
+
+    def get_size(self):
+        return self.m, self.n
+        
+    def set(self,i,j,value):
+        if i>self.m or j>self.n or i<0 or j<0:
+            raise ValueError()
+        if type(value)!=int:
+            raise ValueError()
+        self.A[i][j]=value
+        
+    def __sub__(self, other):
+        P=self.A
+        B=self.A
+        U=other.A
+        if self.m==other.m and self.n==other.n:
+            for x in range(self.m):
+                for y in range(self.n):
+                    P[x][y]=B[x][y]-U[x][y]
+        self.P=P
+        return self.P
+    
+    def transpose(self):
+        b=[[0]*self.m for i in range(self.n)]
+        for i in range(self.n):
+            for j in range(self.m):
+                b[i][j]=self.A[j][i]
+        b=Matrix(b)
+        return b
